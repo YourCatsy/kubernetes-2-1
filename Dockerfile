@@ -16,7 +16,7 @@ RUN gem install bundler && bundle install
 RUN bundle exec rake assets:precompile
 
 # Expose port
-EXPOSE 3000
+EXPOSE 80
 
 # Start server
-CMD ["rails", "server", "-b", "0.0.0.0"]
+CMD ["rails", "server", "-b", "0.0.0.0", "-p", "80"]

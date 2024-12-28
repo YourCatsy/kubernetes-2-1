@@ -16,10 +16,10 @@ spec:
     spec:
       containers:
       - name: webapp
-        image: catherineamf/webapp:latest # Укажите имя вашего образа
+        image: catherineamf/webapp:latest
         ports:
         - containerPort: 3000
-        env:  # Переменные окружения для подключения к БД
+        env:
         - name: POSTGRES_HOST
           value: "db"
         - name: POSTGRES_DB

@@ -15,29 +15,12 @@ jobs:
     - uses: actions/checkout@v3
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1.5.0
-    
     - name: Build and start containers for services
       run: |
         kubectl apply -R -f ./k8s
         kubectl wait pods --all --for condition=Ready
-    
-    - name: Wait for Database
-      run: |
-        timeout 60s bash -c 'until kubectl exec deployment/postgres-deployment -- pg_isready -h db -p 5432 -U postgres; do sleep 5; done'
-    
-    - name: Migrate Database
-      run: |
-        kubectl exec deployment/webapp-deployment -- bundle exec rake db:migrate
-    
     - name: Port Forward to webservice
-      run: |
-        kubectl port-forward service/webapp-service 8080:3000 &
-        sleep 10  # Ждем некоторое время для установки порта
-    
-    - name: Wait for Web App
-      run: |
-        timeout 60s bash -c 'until curl -s http://localhost:8080; do sleep 5; done'
-    
+      run: kubectl port-forward service/webapp-service 8080:80 &
     - name: Test containers functionality
       uses: cypress-io/github-action@v6
       env:

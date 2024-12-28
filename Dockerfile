@@ -1,23 +1,22 @@
-# Используем образ с Ruby
 FROM ruby:3.3.1
 
-# Устанавливаем зависимости
+# Install dependencies
 RUN apt-get update -qq && apt-get install -y nodejs postgresql-client yarn
 
-# Устанавливаем рабочую директорию
+# Set working directory
 WORKDIR /app
 
-# Копируем файлы проекта
+# Copy project files
 COPY . .
 
-# Устанавливаем зависимости Bundler
+# Install Bundler dependencies
 RUN gem install bundler && bundle install
 
-# Собираем ассеты (если используются)
+# Precompile assets
 RUN bundle exec rake assets:precompile
 
-# Открываем порт
+# Expose port
 EXPOSE 3000
 
-# Запускаем сервер
+# Start server
 CMD ["rails", "server", "-b", "0.0.0.0"]

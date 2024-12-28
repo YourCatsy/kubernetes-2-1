@@ -16,6 +16,9 @@ RUN gem install bundler && bundle install
 # Собираем ассеты (если используются)
 RUN bundle exec rake assets:precompile
 
+# Добавляем миграции базы данных
+RUN bundle exec rake db:migrate
+
 # Открываем порт
 EXPOSE 3000
 

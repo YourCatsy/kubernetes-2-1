@@ -57,21 +57,6 @@ jobs:
         kubectl get services
         kubectl get endpoints
 
-    - name: Test containers functionality
-      uses: cypress-io/github-action@v6
-      env:
-        CYPRESS_BASE_URL: http://localhost:8080
-      with:
-        working-directory: ./.github/tests
-
-    - name: Log Cypress Output
-      if: always()
-      run: cat cypress/screenshots/*.png || true
-
-    - name: Log Cypress Test Results
-      if: always()
-      run: cat cypress/videos/*.mp4 || true
-
     - name: Log Network Status
       run: |
         netstat -an
@@ -111,6 +96,21 @@ jobs:
       run: |
         kubectl get networkpolicies
         kubectl describe networkpolicies
+
+    - name: Test containers functionality
+      uses: cypress-io/github-action@v6
+      env:
+        CYPRESS_BASE_URL: http://localhost:8080
+      with:
+        working-directory: ./.github/tests
+
+    - name: Log Cypress Output
+      if: always()
+      run: cat cypress/screenshots/*.png || true
+
+    - name: Log Cypress Test Results
+      if: always()
+      run: cat cypress/videos/*.mp4 || true
 
     - name: Check Logs of Failed Pods
       if: always()

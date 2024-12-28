@@ -25,6 +25,10 @@ jobs:
         kubectl cluster-info
         kubectl get nodes
 
+    - name: Describe Nodes
+      run: |
+        kubectl describe nodes
+
     - name: Build and start containers for services
       run: |
         kubectl apply -R -f ./k8s
@@ -35,17 +39,15 @@ jobs:
         kubectl get pods -o wide
         kubectl describe pods
 
-    - name: Log Deployments and ReplicaSets
-      run: |
-        kubectl get deployments
-        kubectl get replicasets
-
     - name: Log Pod Logs
       run: |
-        for pod in $(kubectl get pods -o name); do
+        for pod in $(kubectl get pods -o=jsonpath='{.items[*].metadata.name}'); do
           echo "Logs for $pod:";
           kubectl logs $pod;
         done
+
+    - name: Log Events
+      run: kubectl get events --sort-by='.lastTimestamp'
 
     - name: Port Forward to webservice
       run: kubectl port-forward service/webapp-service 8080:80 &
@@ -65,3 +67,13 @@ jobs:
     - name: Log Cypress Output
       if: always()
       run: cat cypress/screenshots/*.png || true
+
+    - name: Log Cypress Test Results
+      if: always()
+      run: cat cypress/videos/*.mp4 || true
+
+    - name: Log Network Status
+      run: |
+        netstat -an
+        ss -tuln
+

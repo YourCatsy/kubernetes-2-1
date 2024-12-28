@@ -35,6 +35,18 @@ jobs:
         kubectl get pods -o wide
         kubectl describe pods
 
+    - name: Log Deployments and ReplicaSets
+      run: |
+        kubectl get deployments
+        kubectl get replicasets
+
+    - name: Log Pod Logs
+      run: |
+        for pod in $(kubectl get pods -o name); do
+          echo "Logs for $pod:";
+          kubectl logs $pod;
+        done
+
     - name: Port Forward to webservice
       run: kubectl port-forward service/webapp-service 8080:80 &
 

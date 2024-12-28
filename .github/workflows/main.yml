@@ -7,75 +7,33 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
-
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1.5.0
 
-    - name: Log Environment Variables
-      run: env
+    - name: Install Metrics Server
+      run: |
+        kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+        kubectl wait --namespace kube-system deployment/metrics-server --for condition=Available --timeout=90s
 
     - name: Build and start containers for services
       run: |
         kubectl apply -R -f ./k8s
         kubectl wait pods --all --for condition=Ready
 
-    - name: Log Kubernetes Cluster Info
-      run: |
-        kubectl cluster-info
-        kubectl get nodes
-
-    - name: Log Pods Status
-      run: |
-        kubectl get pods -o wide
-        kubectl describe pods
-
-    - name: Log Pod Logs
-      run: |
-        for pod in $(kubectl get pods -o=jsonpath='{.items[*].metadata.name}'); do
-          echo "Logs for $pod:";
-          kubectl logs $pod;
-        done
-
-    - name: Log Events
-      run: kubectl get events --sort-by='.lastTimestamp'
-
-    - name: Verify Deployment Status
-      run: |
-        kubectl get deployments -o wide
-        kubectl describe deployments
-
-    - name: Check Services and Endpoints
-      run: |
-        kubectl get services -o wide
-        kubectl get endpoints
-
-    - name: Verify All Pods Are Ready
-      run: |
-        kubectl get pods --all-namespaces
-        kubectl wait --for=condition=Ready pods --all --timeout=300s
-
-    - name: Diagnose Database Connectivity
+    - name: Test PostgreSQL connectivity
       run: |
         echo "Testing PostgreSQL connectivity..."
-        POSTGRES_POD=$(kubectl get pods -l app=postgresql -o jsonpath='{.items[0].metadata.name}' || echo "notfound")
-        if [ "$POSTGRES_POD" = "notfound" ]; then
-          echo "No PostgreSQL pods found. Skipping connectivity test.";
-          exit 0;
+        postgres_pod=$(kubectl get pods -l app=postgres -o jsonpath='{.items[0].metadata.name}')
+        if [ -z "$postgres_pod" ]; then
+          echo "No PostgreSQL pods found. Skipping connectivity test."
+        else
+          kubectl exec -it $postgres_pod -- psql -U postgres -d app_production -c '\l'
         fi
-        echo "Logs for $POSTGRES_POD:";
-        kubectl logs $POSTGRES_POD;
-        kubectl exec $POSTGRES_POD -- psql -U $DB_USER -d $DB_NAME -c '\\conninfo';
-
-    - name: Capture Resource Usage
-      run: |
-        kubectl top nodes
-        kubectl top pods
 
     - name: Port Forward to webservice
       run: kubectl port-forward service/webapp-service 8080:80 &
@@ -86,16 +44,3 @@ jobs:
         CYPRESS_BASE_URL: http://localhost:8080
       with:
         working-directory: ./.github/tests
-
-    - name: Log Cypress Test Results
-      if: always()
-      run: cat cypress/videos/*.mp4 || true
-
-    - name: Log Failed Pods Logs
-      if: always()
-      run: |
-        for pod in $(kubectl get pods --field-selector=status.phase!=Running -o=jsonpath='{.items[*].metadata.name}'); do
-          echo "Logs for failed $pod:";
-          kubectl logs $pod;
-        done
-

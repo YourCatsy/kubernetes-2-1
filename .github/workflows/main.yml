@@ -77,3 +77,51 @@ jobs:
         netstat -an
         ss -tuln
 
+    - name: Check Node Status
+      run: |
+        kubectl get nodes -o wide
+        kubectl describe nodes
+
+    - name: Verify All Pods Are Ready
+      run: |
+        kubectl get pods --all-namespaces
+        kubectl wait --for=condition=Ready pods --all --timeout=300s
+
+    - name: List ConfigMaps and Secrets
+      run: |
+        kubectl get configmaps
+        kubectl get secrets
+
+    - name: Verify Deployment Status
+      run: |
+        kubectl get deployments -o wide
+        kubectl describe deployments
+
+    - name: Check Services and Endpoints
+      run: |
+        kubectl get services -o wide
+        kubectl get endpoints
+
+    - name: Display Persistent Volumes and Claims
+      run: |
+        kubectl get pv
+        kubectl get pvc
+
+    - name: Inspect Network Policies
+      run: |
+        kubectl get networkpolicies
+        kubectl describe networkpolicies
+
+    - name: Check Logs of Failed Pods
+      if: always()
+      run: |
+        for pod in $(kubectl get pods --field-selector=status.phase!=Running -o=jsonpath='{.items[*].metadata.name}'); do
+          echo "Logs for $pod:";
+          kubectl logs $pod;
+        done
+
+    - name: Capture Resource Usage
+      run: |
+        kubectl top nodes
+        kubectl top pods
+
